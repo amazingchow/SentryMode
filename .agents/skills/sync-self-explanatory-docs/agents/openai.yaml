@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Self-Explanatory Docs"
+  short_description: "Keep Python architecture docs in sync with code"
+  default_prompt: "Use $sync-self-explanatory-docs to update root, package, and module documentation after this Python change."

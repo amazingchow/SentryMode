@@ -1,0 +1,26 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^tests/
+      - id: end-of-file-fixer
+      # - id: check-added-large-files
+      #   args: ["--max-kb=500"]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: pretty-format-json
+        args: [--autofix, --no-ensure-ascii, --no-sort-keys]
+      - id: check-ast
+      - id: debug-statements
+      - id: check-docstring-first
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.6
+    hooks:
+      - id: ruff-check
+      - id: ruff-format

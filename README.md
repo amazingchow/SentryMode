@@ -1,0 +1,142 @@
+A multi-factor monitoring toolkit for market signals. It is built around a small, extensible core: each factor owns its evaluation logic, a shared runner handles scheduling, and a unified notifier emits one aggregated report per execution cycle.
+
+The project currently ships with two factors:
+
+- `ahr999`: BTC valuation and regime monitoring
+- `vix`: VIX risk-light monitoring with SPY confirmation
+
+## Why SentryMode
+
+- Multi-factor friendly: add new factors without rewriting the runner.
+- Shared scheduling model: one loop, each factor decides whether it should run.
+- Unified notifications: one execution produces one aggregated report.
+- Configuration-first: runtime behavior is driven by environment variables via `pydantic-settings`.
+- Practical developer workflow: `uv`, `ruff`, `pytest`, `pre-commit`, and `Makefile` commands are already wired in.
+
+## Quick Start
+
+### Requirements
+
+- Python `3.12+`
+- [`uv`](https://docs.astral.sh/uv/)
+
+### Installation
+
+```bash
+git clone https://github.com/amazingchow/SentryMode.git
+cd SentryMode
+make init
+```
+
+Or, if you prefer raw `uv` commands:
+
+```bash
+uv sync --all-extras --dev
+```
+
+### First Commands
+
+List all registered factors:
+
+```bash
+sentrymode list-factors
+```
+
+Run all enabled factors once:
+
+```bash
+sentrymode run-once
+```
+
+Run only AHR999 once:
+
+```bash
+sentrymode run-once --factor ahr999
+```
+
+Run only VIX once:
+
+```bash
+sentrymode run-once --factor vix
+```
+
+Start the shared monitor loop:
+
+```bash
+sentrymode run-monitor
+```
+
+Show CLI help:
+
+```bash
+sentrymode --help
+```
+
+### Command Behavior
+
+- `list-factors`: print all registered factors and mark the enabled ones
+- `run-once`: force an immediate evaluation and send one aggregated report
+- `run-monitor`: start the shared polling loop; each factor decides whether it should execute on a given tick
+
+## Configuration
+
+Runtime settings use the `SENTRYMODE_` environment prefix and optional `.env` file (`pydantic-settings`). See `.env.example` for every variable, defaults, descriptions, data-source notes, and a copy-paste example block.
+
+## Project Layout
+
+```text
+.
+|-- src/sentrymode/
+|   |-- __main__.py
+|   |-- monitoring/
+|   |-- market_data.py
+|   `-- factors/
+|       |-- ahr999.py
+|       `-- vix.py
+|-- tests/
+|-- scripts/
+|-- Makefile
+`-- pyproject.toml
+```
+
+## Adding a New Factor
+
+The project is already structured for factor expansion.
+
+1. Add a new module under `src/sentrymode/factors/`.
+2. Implement a factor class with:
+   - `name`
+   - `display_name`
+   - `should_evaluate(context) -> bool`
+   - `evaluate(context) -> FactorResult`
+3. Register the factor in `src/sentrymode/factors/__init__.py`.
+4. Enable it through `SENTRYMODE_ENABLED_FACTORS`.
+
+The runner and notifier layers do not need to change for a normal factor addition.
+
+## Development
+
+Run the full local quality pipeline:
+
+```bash
+make check
+```
+
+## Operational Notes
+
+- `run-once` is useful for cron jobs, manual checks, and debugging a single factor.
+- `run-monitor` is intended for long-running processes.
+- Factor failures are isolated into report entries; one factor error should not crash the whole runner.
+- In network-restricted environments, market data fetches may fail gracefully and be reported as factor execution errors.
+- The `vix` factor is intentionally opt-in by default. Add it to `SENTRYMODE_ENABLED_FACTORS` when you want it included in shared runs.
+
+## Roadmap
+
+- Add more BTC and macro factors
+- Support richer notification channels
+- Add persistent state and historical snapshots
+- Expand automated test coverage for factor scheduling and calculations
+
+## License
+
+This project is licensed under the MIT License. See `LICENSE`.

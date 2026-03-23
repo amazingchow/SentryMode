@@ -1,0 +1,150 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  # ── Build standalone binaries ─────────────────────────────────────────────
+  build:
+    name: Build binary / ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+        include:
+          # macOS arm64 (Apple Silicon, macos-15+)
+          - os: macos-latest
+            target: macos-arm64
+            artifact: sentrymode-macos-arm64
+
+          # macOS x86_64 (Intel)
+          # Note: macos-14-large requires GitHub Team/Enterprise Cloud plan.
+          # If you don't have a paid plan, you can remove this build target
+          # as Apple has discontinued Intel Macs and most users are on Apple Silicon.
+          # - os: macos-14-large
+          #   target: macos-x86_64
+          #   artifact: sentrymode-macos-x86_64
+
+          # Linux x86_64
+          - os: ubuntu-24.04
+            target: linux-x86_64
+            artifact: sentrymode-linux-x86_64
+
+          # Linux arm64 (GitHub-hosted arm64 runner)
+          - os: ubuntu-24.04-arm
+            target: linux-arm64
+            artifact: sentrymode-linux-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install project dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Install PyInstaller
+        run: uv pip install pyinstaller
+
+      - name: Build standalone binary
+        run: uv run pyinstaller project.spec --clean --noconfirm
+
+      - name: Rename binary to include target
+        shell: bash
+        run: mv dist/sentrymode dist/${{ matrix.artifact }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  # ── Build Python distribution (sdist + wheel) ────────────────────────────
+  build-dist:
+    name: Build Python distribution
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+          if-no-files-found: error
+
+  # ── Create GitHub Release ─────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: [build, build-dist]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets/
+          merge-multiple: true
+
+      - name: List release assets
+        run: ls -lh release-assets/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+
+  # ── Publish to PyPI ───────────────────────────────────────────────────────
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [build-dist]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sentrymode
+    permissions:
+      id-token: write  # Required for trusted publishing (OIDC)
+    steps:
+      - name: Download Python dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        # Uses PyPI Trusted Publishing — no API token needed.
+        # Configure at: https://pypi.org/manage/account/publishing/

@@ -1,0 +1,10 @@
+services:
+  sentrymode:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentrymode
+    restart: unless-stopped
+    env_file:
+      - ${SENTRYMODE_ENV_FILE:-.env}
+    command: ["uv", "run", "sentrymode", "run-monitor"]

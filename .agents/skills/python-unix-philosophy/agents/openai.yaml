@@ -1,0 +1,4 @@
+interface:
+  display_name: "Python Unix Philosophy"
+  short_description: "Apply Unix philosophy to Python design and review"
+  default_prompt: "Use $python-unix-philosophy to review this Python code for modularity, simplicity, and clarity."

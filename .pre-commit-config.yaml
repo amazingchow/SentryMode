@@ -5,6 +5,7 @@ repos:
       - id: trailing-whitespace
         exclude: ^tests/
       - id: end-of-file-fixer
+        exclude: LICENSE
       # - id: check-added-large-files
       #   args: ["--max-kb=500"]
       - id: check-merge-conflict
@@ -24,3 +25,15 @@ repos:
     hooks:
       - id: ruff-check
       - id: ruff-format
+
+  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.3
+    hooks:
+      - id: yamlfmt
+        args: [--mapping, '2', --offset, '2', --sequence, '4', --implicit_start]
+        files: .pre-commit-config.yaml|\.github/workflows/.*\.yml$
+
+  # - repo: https://github.com/python-jsonschema/check-jsonschema
+  #   rev: 0.31.1
+  #   hooks:
+  #     - id: check-github-workflows

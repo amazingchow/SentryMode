@@ -1,4 +1,16 @@
-"""Notification implementations for monitor results."""
+"""
+Console and Bark notification adapters.
+
+[INPUT]: Report title/body strings from `MonitorRunner` + Bark connection settings.
+[OUTPUT]: Console output and optional HTTP push requests to Bark endpoints.
+[POS]: Side-effect adapter layer in `sentrymode.monitoring`.
+       Upstream: `MonitorRunner`.
+       Downstream: stdout and `httpx` network calls.
+
+[PROTOCOL]:
+1. Keep notification transport concerns in this module; avoid leaking transport code into runner/factors.
+2. Handle push failures defensively and preserve runner continuity.
+"""
 
 from __future__ import annotations
 

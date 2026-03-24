@@ -1,4 +1,16 @@
-"""Shared market data access primitives."""
+"""
+Shared daily market-data adapter seam.
+
+[INPUT]: Series name + `Settings` with source URLs and timeout values.
+[OUTPUT]: Normalized ascending `DailyBar` sequences for downstream factor calculations.
+[POS]: Shared adapter module in `src/sentrymode`.
+       Upstream: factor modules (currently `vix.py`).
+       Downstream: external HTTP CSV data providers.
+
+[PROTOCOL]:
+1. Keep provider seam (`DailySeriesProvider`) stable so factors can swap data backends.
+2. Surface malformed payloads as explicit exceptions; do not silently coerce unknown schemas.
+"""
 
 from __future__ import annotations
 

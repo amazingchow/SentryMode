@@ -1,4 +1,17 @@
-"""AHR999 factor implementation."""
+"""
+AHR999 BTC valuation factor.
+
+[INPUT]: `MonitorContext` + runtime `Settings`, then Kraken OHLC HTTP data.
+[OUTPUT]: `FactorResult` containing AHR999 regime, strategy guidance, and metrics.
+[POS]: Concrete factor plugin in `sentrymode.factors`.
+       Upstream: factor registry + `MonitorRunner`.
+       Downstream: `httpx` Kraken API and monitoring result model contracts.
+
+[PROTOCOL]:
+1. Keep scheduling logic in `should_evaluate`; keep numeric computation in pure helper methods.
+2. Preserve localized message key parity (`en`/`zh`) when fields are added.
+3. Raise explicit errors for invalid/insufficient source data so runner can isolate failures.
+"""
 
 from __future__ import annotations
 

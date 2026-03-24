@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ['3.12', '3.13', '3.14']
     steps:
       - uses: actions/checkout@v4
 
@@ -40,7 +40,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.12", "3.13", "3.14"]
+        python-version: ['3.12', '3.13', '3.14']
 
     steps:
       - uses: actions/checkout@v4
@@ -57,7 +57,9 @@ jobs:
         run: uv sync --all-extras --dev
 
       - name: Run tests
-        run: uv run pytest -vv --cov=src --cov-report=xml --cov-report=term-missing tests/
+        run: |
+          uv run coverage run -m pytest -vv tests/
+          uv run coverage report
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
@@ -65,3 +67,32 @@ jobs:
         with:
           files: coverage.xml
           fail_ci_if_error: false
+
+  safety:
+    name: Safety (dependency vulnerabilities)
+    # Fork PRs cannot read base-repo secrets; skip to avoid failing without SAFETY_API_KEY.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.12', '3.13', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      # Configure SAFETY_API_KEY under repo Settings → Secrets and variables → Actions.
+      - name: Run safety scan
+        env:
+          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+        run: uv run safety scan --full-report

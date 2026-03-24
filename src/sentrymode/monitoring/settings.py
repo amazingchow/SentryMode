@@ -1,4 +1,16 @@
-"""Application settings for monitoring runtime."""
+"""
+Centralized runtime configuration schema.
+
+[INPUT]: Environment variables and optional `.env` values with `SENTRYMODE_` prefix.
+[OUTPUT]: Validated, typed runtime configuration consumed by CLI, runner, and factors.
+[POS]: Configuration boundary for the monitoring kernel.
+       Upstream: process environment and deployment config.
+       Downstream: all runtime modules requiring settings.
+
+[PROTOCOL]:
+1. Normalize and validate external config at this boundary; keep downstream modules schema-focused.
+2. Add new runtime knobs here with explicit defaults/validators instead of ad-hoc env lookups.
+"""
 
 from __future__ import annotations
 

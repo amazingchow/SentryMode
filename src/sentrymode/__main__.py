@@ -1,4 +1,16 @@
-"""CLI entrypoint for SentryMode."""
+"""
+SentryMode CLI composition entrypoint.
+
+[INPUT]: CLI argv tokens from console script wrapper or tests.
+[OUTPUT]: Command dispatch to factor listing, one-shot execution, or shared monitor loop.
+[POS]: Located at package entrypoint.
+       Upstream: `project.scripts.sentrymode`.
+       Downstream: `sentrymode.factors` registry + `sentrymode.monitoring` runner/notifier wiring.
+
+[PROTOCOL]:
+1. Keep command parsing and process I/O here; factor math belongs in `sentrymode.factors`.
+2. Sync this docstring when commands, wiring dependencies, or dispatch flow changes.
+"""
 
 from __future__ import annotations
 

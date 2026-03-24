@@ -25,7 +25,7 @@ The project currently ships with two factors:
 ```bash
 git clone https://github.com/amazingchow/SentryMode.git
 cd SentryMode
-make init
+make install
 ```
 
 Or, if you prefer raw `uv` commands:

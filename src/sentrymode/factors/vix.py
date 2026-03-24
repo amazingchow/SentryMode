@@ -1,4 +1,17 @@
-"""VIX risk-light factor implementation."""
+"""
+VIX risk-light regime factor.
+
+[INPUT]: `MonitorContext` + aligned daily VIX/SPY series from `DailySeriesProvider`.
+[OUTPUT]: `FactorResult` with regime classification, allocation guidance, and summary metrics.
+[POS]: Concrete factor plugin in `sentrymode.factors`.
+       Upstream: factor registry + `MonitorRunner`.
+       Downstream: `sentrymode.market_data` provider seam and monitoring result contracts.
+
+[PROTOCOL]:
+1. Keep data loading via provider abstraction to preserve testability and backend swap support.
+2. Preserve deterministic regime rules in `_classify_regime`; tune thresholds through `Settings`.
+3. Validate historical depth before calculations; fail fast on malformed or insufficient data.
+"""
 
 from __future__ import annotations
 

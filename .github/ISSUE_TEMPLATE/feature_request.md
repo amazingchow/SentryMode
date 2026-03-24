@@ -2,7 +2,7 @@
 name: feature request
 about: Propose a suggested feature
 title: ''
-labels: feature request 
+labels: feature request
 assignees: ''
 ---
 
@@ -13,8 +13,8 @@ assignees: ''
 
 **For improving/extending existing features, please include:**
 
-- Description of the proposed feature. 
-- Include a short motivation of why the feature will be useful to users. 
+- Description of the proposed feature.
+- Include a short motivation of why the feature will be useful to users.
 
 **For feature proposals that require additional research, include:**
 

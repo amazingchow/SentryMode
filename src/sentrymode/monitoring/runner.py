@@ -1,4 +1,17 @@
-"""Factor runner and report aggregation."""
+"""
+Factor orchestration and report assembly.
+
+[INPUT]: Factor instances, runtime `Settings`, notifier adapter, and optional factor filters.
+[OUTPUT]: Aggregated execution results plus formatted notifications (plain or markdown).
+[POS]: Orchestration layer in `sentrymode.monitoring`.
+       Upstream: CLI commands and single-factor helpers.
+       Downstream: factor protocol calls and notifier side effects.
+
+[PROTOCOL]:
+1. Isolate factor exceptions into error results so one failure does not crash the cycle.
+2. Keep scheduling/dispatch logic here; factors decide strategy signals only.
+3. Sync localized label dictionaries when report fields or severities change.
+"""
 
 from __future__ import annotations
 

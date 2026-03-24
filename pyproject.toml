@@ -30,6 +30,7 @@ dependencies = [
     "pydantic-settings>=2.13.1,<3.0.0",
     "python-dotenv>=1.2.2,<2.0.0",
     "tiktoken>=0.12.0,<1.0.0",
+    "tqdm>=4.67.1,<5.0.0",
 ]
 
 [project.urls]
@@ -39,12 +40,15 @@ Issues = "https://github.com/amazingchow/SentryMode/issues"
 
 [dependency-groups]
 dev = [
+    "coverage>=7.13.5",
     "libcst>=1.8.6",
+    "mypy>=1.19.1",
     "pre-commit>=4.3.0",
     "pyinstaller>=6.19.0",
     "pytest>=9.0.2",
     "pytest-cov>=7.0.0",
     "ruff>=0.15.6",
+    "safety>=3.7.0",
 ]
 
 [project.scripts]
@@ -85,3 +89,23 @@ indent-style = "space"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.coverage.run]
+source = ["src"]
+relative_files = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+precision = 1
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    'if __name__ == "__main__":',
+    "if TYPE_CHECKING:",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"

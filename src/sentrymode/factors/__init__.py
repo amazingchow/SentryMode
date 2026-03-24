@@ -1,4 +1,16 @@
-"""Factor registry."""
+"""
+Factor registry and factory helpers.
+
+[INPUT]: No runtime input; imports concrete factor classes at module load.
+[OUTPUT]: Registry-backed helpers to list names and instantiate factor objects.
+[POS]: Boundary between CLI/runner wiring and concrete factor implementations.
+       Upstream: `sentrymode.__main__` and tests.
+       Downstream: `ahr999.py`, `vix.py`.
+
+[PROTOCOL]:
+1. Update `AVAILABLE_FACTORS` whenever factor files are added, removed, or renamed.
+2. Keep registry keys stable because they are user-facing CLI identifiers.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,16 @@
-"""Core monitoring domain models."""
+"""
+Monitoring runtime contracts and core models.
+
+[INPUT]: Runtime timestamps/settings and factor/notifier protocol implementations.
+[OUTPUT]: Typed monitoring contracts (`Factor`, `Notifier`) and immutable result/context models.
+[POS]: Domain contract layer of `sentrymode.monitoring`.
+       Upstream: factor modules and runner orchestration.
+       Downstream: none (protocol boundary).
+
+[PROTOCOL]:
+1. Keep contracts framework-agnostic; do not add transport or CLI dependencies here.
+2. Sync dataclass fields and protocol signatures with runner/factor expectations atomically.
+"""
 
 from __future__ import annotations
 

@@ -179,7 +179,8 @@ release-tag: ## Create and push a git tag to trigger the release workflow (use: 
 clean: ## Clean build artifacts and caches
 	$(call print_log,Cleaning up...)
 	@rm -rf .DS_Store dist build *.egg-info htmlcov .coverage coverage.xml
-	@find . -depth -type d -name "(__pycache__|\.pyc|\.pyo$$)" -exec rm -rf {} + 2>/dev/null || true
+	@find . -depth -type d -name '__pycache__' -exec rm -rf {} + 2>/dev/null || true
+	@find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete 2>/dev/null || true
 	@find . -depth -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	@find . -depth -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	@find . -depth -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true

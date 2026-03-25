@@ -5,7 +5,7 @@ Factor registry and factory helpers.
 [OUTPUT]: Registry-backed helpers to list names and instantiate factor objects.
 [POS]: Boundary between CLI/runner wiring and concrete factor implementations.
        Upstream: `sentrymode.__main__` and tests.
-       Downstream: `ahr999.py`, `vix.py`.
+       Downstream: `ahr999.py`, `vix.py`, `us10y.py`.
 
 [PROTOCOL]:
 1. Update `AVAILABLE_FACTORS` whenever factor files are added, removed, or renamed.
@@ -15,11 +15,13 @@ Factor registry and factory helpers.
 from __future__ import annotations
 
 from sentrymode.factors.ahr999 import AHR999Factor
+from sentrymode.factors.us10y import US10YFactor
 from sentrymode.factors.vix import VIXFactor
 from sentrymode.monitoring import Factor
 
 AVAILABLE_FACTORS: dict[str, type[Factor]] = {
     "ahr999": AHR999Factor,
+    "us10y": US10YFactor,
     "vix": VIXFactor,
 }
 

@@ -126,3 +126,20 @@ class Settings(BaseSettings):
     vix_cboe_csv_url: str = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
     spy_daily_csv_url: str = "https://stooq.com/q/d/l/?s=spy.us&i=d"
     vix_http_timeout_seconds: float = 10.0
+
+    us10y_run_hour: int = 16
+    us10y_run_minute: int = 10
+    us10y_run_timezone: str = "America/New_York"
+    us10y_symbol: str = "^TNX"
+    us10y_yahoo_period: str = "1y"
+    us10y_lookback_days: int = 120
+    us10y_sma_window: int = 20
+    us10y_roc_window: int = 10
+    us10y_green_threshold: float = 4.0
+    us10y_red_threshold: float = 4.5
+    us10y_roc_warning_threshold: float = 0.03
+    us10y_up_confirm_days: int = 2
+    us10y_down_confirm_days: int = 3
+    us10y_spy_sma_window: int = 20
+    us10y_black_swan_vix_threshold: float = 20.0
+    us10y_state_file: str = ".sentrymode/us10y_state.json"

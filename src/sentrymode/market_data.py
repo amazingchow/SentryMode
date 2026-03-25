@@ -4,8 +4,8 @@ Shared daily market-data adapter seam.
 [INPUT]: Series name + `Settings` with source URLs and timeout values.
 [OUTPUT]: Normalized ascending `DailyBar` sequences for downstream factor calculations.
 [POS]: Shared adapter module in `src/sentrymode`.
-       Upstream: factor modules (currently `vix.py`).
-       Downstream: external HTTP CSV data providers.
+       Upstream: factor modules (currently `vix.py`, `us10y.py`).
+       Downstream: external HTTP CSV providers and Yahoo Finance API.
 
 [PROTOCOL]:
 1. Keep provider seam (`DailySeriesProvider`) stable so factors can swap data backends.
@@ -21,6 +21,7 @@ from io import StringIO
 from typing import Protocol
 
 import httpx
+import yfinance
 
 from sentrymode.monitoring.settings import Settings
 
@@ -133,3 +134,72 @@ class HttpCsvSeriesProvider:
             return datetime.fromisoformat(normalized_value).date()
         except ValueError as exc:
             raise ValueError(f"Unsupported date format: {raw_date}") from exc
+
+
+class YahooSeriesProvider:
+    """Load daily close series from Yahoo Finance via yfinance."""
+
+    _SYMBOLS: dict[str, str] = {
+        "us10y": "^TNX",
+        "vix": "^VIX",
+        "spy": "SPY",
+    }
+
+    def get_series(
+        self,
+        series_name: str,
+        settings: Settings,
+    ) -> list[DailyBar]:
+        """Fetch and normalize the requested series from Yahoo Finance."""
+        symbol = self._resolve_symbol(series_name, settings)
+        history = yfinance.Ticker(symbol).history(period=settings.us10y_yahoo_period, interval="1d")
+        if history.empty:
+            raise ValueError(f"Yahoo Finance returned empty history for {series_name} ({symbol}).")
+        if "Close" not in history.columns:
+            raise ValueError(f"Yahoo Finance response for {series_name} ({symbol}) is missing Close column.")
+
+        bars: list[DailyBar] = []
+        for index, close in history["Close"].items():
+            if close is None:
+                continue
+            close_value = float(close)
+            if close_value <= 0:
+                continue
+            bar_date = index.date()
+            bars.append(
+                DailyBar(
+                    date=bar_date,
+                    close=self._normalize_close(series_name, close_value, settings),
+                )
+            )
+
+        if not bars:
+            raise ValueError(f"Yahoo Finance history for {series_name} ({symbol}) has no valid close rows.")
+        return sorted(bars, key=lambda bar,: bar.date)
+
+    def _resolve_symbol(
+        self,
+        series_name: str,
+        settings: Settings,
+    ) -> str:
+        normalized_name = series_name.strip().lower()
+        if normalized_name == "us10y":
+            return settings.us10y_symbol
+        symbol = self._SYMBOLS.get(normalized_name)
+        if symbol is None:
+            raise ValueError(f"Unsupported Yahoo series requested: {series_name}")
+        return symbol
+
+    def _normalize_close(
+        self,
+        series_name: str,
+        close_value: float,
+        settings: Settings,
+    ) -> float:
+        if series_name.strip().lower() == "us10y":
+            # Align incoming ^TNX scale to threshold scale:
+            # some payloads are 43.5 (=> 4.35%), others are already 4.35.
+            if close_value >= settings.us10y_red_threshold * 2:
+                return close_value / 10.0
+            return close_value
+        return close_value

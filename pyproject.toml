@@ -13,13 +13,6 @@ authors = [
     { name = "Adam Zhou", email = "jianzhou42@163.com" },
 ]
 keywords = []
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.12",
-]
 dependencies = [
     "colorama>=0.4.6,<1.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -31,12 +24,8 @@ dependencies = [
     "python-dotenv>=1.2.2,<2.0.0",
     "tiktoken>=0.12.0,<1.0.0",
     "tqdm>=4.67.1,<5.0.0",
+    "yfinance>=0.2.66,<1.0.0",
 ]
-
-[project.urls]
-Homepage = "https://github.com/amazingchow/SentryMode"
-Repository = "https://github.com/amazingchow/SentryMode"
-Issues = "https://github.com/amazingchow/SentryMode/issues"
 
 [dependency-groups]
 dev = [

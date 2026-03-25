@@ -28,5 +28,36 @@ You are an expert Python backend architect with extensive expertise in high-conc
 
 ## Dev Environment Tips
 
-- From the package root, you can just call `make format`, `make lint` and `make test`.
-- Always run `make format`, `make lint` and `make test` before committing or finalizing your code logic.
+- From the package root, you can just call `make`, available Makefile commands:
+
+  ```
+  Commands:
+    make <target>
+
+  Workflows
+    check                 Full check pipeline: format, lint, lockfile-update, pre-commit
+    ci                    Full CI pipeline: clean, format, lint, test, check-safety
+
+  Development
+    download-uv           Download uv
+    install               Initialize the project and install dependencies
+    lockfile-update       Update the lockfile
+    format                Format code and sort imports
+    lint                  Run read-only lint checks
+    pre-commit            Run pre-commit hooks across the repository
+    check-safety          Run safety checks on dependencies
+
+  Testing & execution
+    test                  Run unit tests with coverage (coverage run + report)
+    run                   Run the package entrypoint
+
+  Build & Release
+    build                 Build standalone binary with PyInstaller (output: dist/sentrymode)
+    dist                  Build Python sdist + wheel for PyPI
+    release-tag           Create and push a git tag to trigger the release workflow (use: make release-tag VERSION=v1.2.3)
+
+  Clean
+    clean                 Clean build artifacts and caches
+  ```
+
+- Always run `make check` before committing or finalizing your code logic.

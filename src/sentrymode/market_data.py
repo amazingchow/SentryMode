@@ -4,8 +4,8 @@ Shared daily market-data adapter seam.
 [INPUT]: Series name + `Settings` with source URLs and timeout values.
 [OUTPUT]: Normalized ascending `DailyBar` sequences for downstream factor calculations.
 [POS]: Shared adapter module in `src/sentrymode`.
-       Upstream: factor modules (currently `vix.py`, `us10y.py`).
-       Downstream: external HTTP CSV providers and Yahoo Finance API.
+       Upstream: factor modules (currently `vix.py`, `us10y.py`, `btc_realized_pl_ratio_90d.py`).
+       Downstream: external HTTP CSV providers, Yahoo Finance API, and Glassnode API.
 
 [PROTOCOL]:
 1. Keep provider seam (`DailySeriesProvider`) stable so factors can swap data backends.
@@ -15,8 +15,9 @@ Shared daily market-data adapter seam.
 from __future__ import annotations
 
 import csv
+import math
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from io import StringIO
 from typing import Protocol
 
@@ -28,7 +29,7 @@ from sentrymode.monitoring.settings import Settings
 
 @dataclass(slots=True, frozen=True)
 class DailyBar:
-    """Normalized daily OHLC subset used by factors."""
+    """Normalized daily scalar series sample used by factors."""
 
     date: date
     close: float
@@ -203,3 +204,111 @@ class YahooSeriesProvider:
                 return close_value / 10.0
             return close_value
         return close_value
+
+
+class GlassnodeSeriesProvider:
+    """Load daily metric series from Glassnode."""
+
+    _SERIES_CONFIGS: dict[str, dict[str, str]] = {
+        "btc_realized_pl_ratio": {
+            "asset": "BTC",
+            "interval": "24h",
+            "path": "/v1/metrics/indicators/realized_profit_loss_ratio",
+        }
+    }
+
+    def get_series(
+        self,
+        series_name: str,
+        settings: Settings,
+    ) -> list[DailyBar]:
+        """Fetch and normalize the requested Glassnode metric series."""
+        api_key = settings.glassnode_api_key.strip()
+        if not api_key:
+            raise ValueError(f"{series_name} requires a non-empty Glassnode API key.")
+
+        series_config = self._resolve_config(series_name)
+        response = httpx.get(
+            self._resolve_url(settings, series_config["path"]),
+            params={
+                "a": series_config["asset"],
+                "api_key": api_key,
+                "i": series_config["interval"],
+            },
+            timeout=settings.glassnode_http_timeout_seconds,
+        )
+        response.raise_for_status()
+        return self._parse_time_series(response.json(), series_name)
+
+    def _resolve_config(
+        self,
+        series_name: str,
+    ) -> dict[str, str]:
+        normalized_name = series_name.strip().lower()
+        config = self._SERIES_CONFIGS.get(normalized_name)
+        if config is None:
+            raise ValueError(f"Unsupported Glassnode series requested: {series_name}")
+        return config
+
+    def _resolve_url(
+        self,
+        settings: Settings,
+        path: str,
+    ) -> str:
+        base_url = settings.glassnode_api_url.strip().rstrip("/")
+        if not base_url:
+            raise ValueError("Glassnode API URL cannot be empty.")
+        return f"{base_url}{path}"
+
+    def _parse_time_series(
+        self,
+        payload: object,
+        series_name: str,
+    ) -> list[DailyBar]:
+        if not isinstance(payload, list) or not payload:
+            raise ValueError(f"{series_name} Glassnode response is empty or not a list.")
+
+        bars: list[DailyBar] = []
+        for point in payload:
+            if not isinstance(point, dict):
+                raise ValueError(f"{series_name} Glassnode response contains a non-object datapoint.")
+
+            raw_timestamp = point.get("t")
+            raw_value = point.get("v")
+            if raw_timestamp is None or raw_value is None:
+                raise ValueError(f"{series_name} Glassnode datapoint must contain both 't' and 'v'.")
+
+            timestamp = self._parse_timestamp(raw_timestamp, series_name)
+            value = self._parse_value(raw_value, series_name)
+            bars.append(
+                DailyBar(
+                    date=datetime.fromtimestamp(timestamp, tz=UTC).date(),
+                    close=value,
+                )
+            )
+
+        return sorted(bars, key=lambda bar,: bar.date)
+
+    def _parse_timestamp(
+        self,
+        raw_timestamp: object,
+        series_name: str,
+    ) -> int:
+        if isinstance(raw_timestamp, bool) or not isinstance(raw_timestamp, (int, float)):
+            raise ValueError(f"{series_name} Glassnode datapoint has an invalid timestamp.")
+        timestamp = int(raw_timestamp)
+        if timestamp <= 0:
+            raise ValueError(f"{series_name} Glassnode datapoint timestamp must be positive.")
+        return timestamp
+
+    def _parse_value(
+        self,
+        raw_value: object,
+        series_name: str,
+    ) -> float:
+        if isinstance(raw_value, bool) or not isinstance(raw_value, (int, float)):
+            raise ValueError(f"{series_name} Glassnode datapoint has an invalid numeric value.")
+        value = float(raw_value)
+        if not math.isfinite(value):
+            raise ValueError(f"{series_name} Glassnode datapoint value must be finite.")
+        return value

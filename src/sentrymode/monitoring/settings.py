@@ -2,10 +2,10 @@
 Centralized runtime configuration schema.
 
 [INPUT]: Environment variables and optional `.env` values with `SENTRYMODE_` prefix.
-[OUTPUT]: Validated, typed runtime configuration consumed by CLI, runner, and factors.
+[OUTPUT]: Validated, typed runtime configuration consumed by CLI, runner, factors, and external market-data providers.
 [POS]: Configuration boundary for the monitoring kernel.
        Upstream: process environment and deployment config.
-       Downstream: all runtime modules requiring settings.
+       Downstream: all runtime modules and vendor adapters requiring settings.
 
 [PROTOCOL]:
 1. Normalize and validate external config at this boundary; keep downstream modules schema-focused.
@@ -48,6 +48,9 @@ class Settings(BaseSettings):
         default="en",
         description="Report copy language: en or zh only.",
     )
+    glassnode_api_url: str = "https://api.glassnode.com"
+    glassnode_api_key: str = ""
+    glassnode_http_timeout_seconds: float = 10.0
 
     @field_validator("bark_server", "bark_device_key", mode="before")
     @classmethod
@@ -143,3 +146,10 @@ class Settings(BaseSettings):
     us10y_spy_sma_window: int = 20
     us10y_black_swan_vix_threshold: float = 20.0
     us10y_state_file: str = ".sentrymode/us10y_state.json"
+
+    btc_realized_pl_ratio_90d_run_hour: int = 9
+    btc_realized_pl_ratio_90d_run_minute: int = 25
+    btc_realized_pl_ratio_90d_run_timezone: str = "America/New_York"
+    btc_realized_pl_ratio_90d_lookback_days: int = 120
+    btc_realized_pl_ratio_90d_sma_window: int = 90
+    btc_realized_pl_ratio_90d_threshold: float = 1.0

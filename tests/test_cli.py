@@ -20,8 +20,14 @@ def test_cli_output(
 
 def test_registered_factors_include_us10y() -> None:
     assert "us10y" in list_factor_names()
+    assert "btc_realized_pl_ratio_90d" in list_factor_names()
 
 
 def test_default_enabled_factors_exclude_us10y() -> None:
-    settings = Settings(_env_file=None)
+    settings = Settings(
+        _env_file=None,
+        bark_server="https://example.com",
+        bark_device_key="device-key",
+    )
     assert "us10y" not in settings.enabled_factors
+    assert "btc_realized_pl_ratio_90d" not in settings.enabled_factors

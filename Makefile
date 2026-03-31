@@ -4,23 +4,26 @@
 .DEFAULT_GOAL := help
 SHELL := /usr/bin/env bash -o pipefail -o errexit
 
-PROJECT_NAME := SentryMode
-VERSION      := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
-COMMIT_HASH  := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-BUILD_TIME   := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-SRC_DIR      := src
-TEST_DIR     := tests
-UV           := uv
-PYTHON       := $(UV) run python
-COVERAGE     := $(UV) run coverage
-RUFF         := $(UV) run ruff
-PRECOMMIT    := $(UV) run pre-commit
-SAFETY       := $(UV) run safety
-DOCKER       := docker
-COMPOSE      := docker compose
-IMAGE_NAME   := sentrymode:latest
-SERVICE_NAME := sentrymode
-ENV_FILE     := .env
+PROJECT_NAME        := SentryMode
+VERSION             := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0")
+COMMIT_HASH         := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+BUILD_TIME          := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+SRC_DIR             := src
+TEST_DIR            := tests
+UV                  := uv
+PYTHON              := $(UV) run python
+COVERAGE            := $(UV) run coverage
+RUFF                := $(UV) run ruff
+PRECOMMIT           := $(UV) run pre-commit
+SAFETY              := $(UV) run safety
+DOCKER              := docker
+COMPOSE             := docker compose
+IMAGE_NAME          := sentrymode:latest
+SERVICE_NAME        := sentrymode
+ENV_FILE            := .env
+RUN_NETWORK         ?= 0
+PYTEST_ARGS         ?=
+PYTEST_NETWORK_ARGS := $(if $(filter 1 true TRUE yes YES,$(RUN_NETWORK)),--run-network,)
 
 # =============================================================================
 # HELPER FUNCTIONS
@@ -107,10 +110,10 @@ check-safety:	## Run safety checks on dependencies
 ##@ Testing & execution
 
 .PHONY: test
-test: ## Run unit tests with coverage (coverage run + report)
+test: ## Run unit tests with coverage (set RUN_NETWORK=1 to include network smoke tests)
 	$(call print_log,Running Tests...)
 	@$(COVERAGE) erase
-	@$(COVERAGE) run -m pytest -vv $(TEST_DIR)
+	@$(COVERAGE) run -m pytest -vv $(TEST_DIR) $(PYTEST_NETWORK_ARGS) $(PYTEST_ARGS)
 	@$(COVERAGE) report
 
 .PHONY: run

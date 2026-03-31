@@ -309,3 +309,85 @@ def test_glassnode_provider_requires_api_key() -> None:
 
     with pytest.raises(ValueError, match="requires a non-empty Glassnode API key"):
         provider.get_series("btc_realized_pl_ratio", settings)
+
+
+def test_yahoo_provider_rejects_unsupported_series() -> None:
+    provider = YahooSeriesProvider()
+    settings = _build_settings()
+
+    with pytest.raises(ValueError, match="Unsupported Yahoo series requested"):
+        provider.get_series("gold", settings)
+
+
+def test_yahoo_provider_rejects_empty_symbol_setting() -> None:
+    provider = YahooSeriesProvider()
+    settings = _build_settings(vix_yahoo_symbol="   ")
+
+    with pytest.raises(ValueError, match="vix_yahoo_symbol"):
+        provider._resolve_query("vix", settings)
+
+
+def test_yahoo_provider_rejects_history_without_valid_close_rows(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = YahooSeriesProvider()
+    settings = _build_settings(vix_yahoo_symbol="^VIX_CUSTOM")
+    _install_yahoo_ticker_mock(
+        monkeypatch,
+        history_by_symbol={
+            "^VIX_CUSTOM": _DummyHistory(
+                rows=[
+                    (datetime(2025, 1, 1), None),
+                    (datetime(2025, 1, 2), 0.0),
+                    (datetime(2025, 1, 3), float("nan")),
+                ]
+            )
+        },
+    )
+
+    with pytest.raises(ValueError, match="has no valid close rows"):
+        provider.get_series("vix", settings)
+
+
+def test_glassnode_provider_rejects_unsupported_series() -> None:
+    provider = GlassnodeSeriesProvider()
+
+    with pytest.raises(ValueError, match="Unsupported Glassnode series requested"):
+        provider._resolve_config("unknown")
+
+
+def test_glassnode_provider_rejects_empty_api_url() -> None:
+    provider = GlassnodeSeriesProvider()
+    settings = _build_settings(glassnode_api_url="  ")
+
+    with pytest.raises(ValueError, match="API URL cannot be empty"):
+        provider._resolve_url(settings, "/v1/path")
+
+
+def test_glassnode_provider_rejects_non_object_datapoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = GlassnodeSeriesProvider()
+    settings = _build_settings(glassnode_api_key="test-key")
+    monkeypatch.setattr(market_data.httpx, "get", lambda *args, **kwargs,: _DummyResponse([123]))
+
+    with pytest.raises(ValueError, match="non-object datapoint"):
+        provider.get_series("btc_realized_pl_ratio", settings)
+
+
+def test_glassnode_provider_rejects_bool_timestamp_and_non_positive_timestamp() -> None:
+    provider = GlassnodeSeriesProvider()
+
+    with pytest.raises(ValueError, match="invalid timestamp"):
+        provider._parse_timestamp(True, "btc_realized_pl_ratio")
+    with pytest.raises(ValueError, match="timestamp must be positive"):
+        provider._parse_timestamp(0, "btc_realized_pl_ratio")
+
+
+def test_glassnode_provider_rejects_invalid_numeric_values() -> None:
+    provider = GlassnodeSeriesProvider()
+
+    with pytest.raises(ValueError, match="invalid numeric value"):
+        provider._parse_value(True, "btc_realized_pl_ratio")
+    with pytest.raises(ValueError, match="must be finite"):
+        provider._parse_value(float("inf"), "btc_realized_pl_ratio")

@@ -9,6 +9,7 @@ VIX risk-light regime factor.
 
 [PROTOCOL]:
 1. Keep data loading via provider abstraction to preserve testability and backend swap support.
+   The default provider is `YahooSeriesProvider` for both VIX and SPY daily closes.
 2. Preserve deterministic regime rules in `_classify_regime`; tune thresholds through `Settings`.
 3. Validate historical depth before calculations; fail fast on malformed or insufficient data.
 """
@@ -19,7 +20,7 @@ from dataclasses import dataclass, field
 from statistics import mean
 from zoneinfo import ZoneInfo
 
-from sentrymode.market_data import DailyBar, DailySeriesProvider, HttpCsvSeriesProvider
+from sentrymode.market_data import DailyBar, DailySeriesProvider, YahooSeriesProvider
 from sentrymode.monitoring import (
     ConsoleBarkNotifier,
     FactorResult,
@@ -79,7 +80,7 @@ class VIXFactor:
         },
     }
 
-    provider: DailySeriesProvider = field(default_factory=HttpCsvSeriesProvider)
+    provider: DailySeriesProvider = field(default_factory=YahooSeriesProvider)
     name: str = "vix"
     display_name: str = "VIX Risk Light"
 

@@ -126,8 +126,9 @@ class Settings(BaseSettings):
     vix_roc_red_threshold: float = 0.30
     vix_two_day_confirmation: int = 2
     spy_sma_window: int = 20
-    vix_cboe_csv_url: str = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
-    spy_daily_csv_url: str = "https://stooq.com/q/d/l/?s=spy.us&i=d"
+    vix_yahoo_symbol: str = "^VIX"
+    spy_yahoo_symbol: str = "SPY"
+    vix_yahoo_period: str = "1y"
     vix_http_timeout_seconds: float = 10.0
 
     us10y_run_hour: int = 16

@@ -5,7 +5,8 @@ Centralized runtime configuration schema.
 [OUTPUT]: Validated, typed runtime configuration consumed by CLI, runner, factors, and external market-data providers.
 [POS]: Configuration boundary for the monitoring kernel.
        Upstream: process environment and deployment config.
-       Downstream: all runtime modules and vendor adapters requiring settings.
+       Downstream: all runtime modules and vendor adapters requiring settings, including
+       the AI portfolio factor's scheduling and position-state knobs.
 
 [PROTOCOL]:
 1. Normalize and validate external config at this boundary; keep downstream modules schema-focused.
@@ -154,3 +155,60 @@ class Settings(BaseSettings):
     btc_realized_pl_ratio_90d_lookback_days: int = 120
     btc_realized_pl_ratio_90d_sma_window: int = 90
     btc_realized_pl_ratio_90d_threshold: float = 1.0
+
+    portfolio_run_hour: int = 16
+    portfolio_run_minute: int = 15
+    portfolio_run_timezone: str = "America/New_York"
+    portfolio_yahoo_period: str = "2y"
+    portfolio_short_window: int = 20
+    portfolio_medium_window: int = 50
+    portfolio_long_window: int = 200
+    portfolio_breakout_window: int = 10
+    portfolio_earnings_guard_days: int = 5
+    portfolio_vix_green_max: float = 18.0
+    portfolio_vix_yellow_max: float = 24.0
+    portfolio_vix_orange_max: float = 30.0
+    portfolio_vix_extreme_min: float = 35.0
+    portfolio_nlr_vix_build_max: float = 22.0
+    portfolio_current_positions: list[str] = Field(default_factory=list)
+    portfolio_cost_basis: dict[str, float] = Field(default_factory=dict)
+
+    @field_validator("portfolio_current_positions")
+    @classmethod
+    def _normalize_portfolio_current_positions(
+        cls,
+        value: list[str],
+    ) -> list[str]:
+        normalized: list[str] = []
+        for raw_symbol in value:
+            if not isinstance(raw_symbol, str):
+                msg = "portfolio_current_positions entries must be strings"
+                raise TypeError(msg)
+            symbol = raw_symbol.strip().upper()
+            if symbol and symbol not in normalized:
+                normalized.append(symbol)
+        return normalized
+
+    @field_validator("portfolio_cost_basis")
+    @classmethod
+    def _normalize_portfolio_cost_basis(
+        cls,
+        value: dict[str, float],
+    ) -> dict[str, float]:
+        normalized: dict[str, float] = {}
+        for raw_symbol, raw_cost in value.items():
+            if not isinstance(raw_symbol, str):
+                msg = "portfolio_cost_basis keys must be strings"
+                raise TypeError(msg)
+
+            symbol = raw_symbol.strip().upper()
+            if not symbol:
+                msg = "portfolio_cost_basis keys cannot be empty"
+                raise ValueError(msg)
+
+            cost_basis = float(raw_cost)
+            if cost_basis <= 0:
+                msg = "portfolio_cost_basis values must be positive"
+                raise ValueError(msg)
+            normalized[symbol] = cost_basis
+        return normalized

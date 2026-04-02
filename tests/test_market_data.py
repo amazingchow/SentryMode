@@ -185,6 +185,37 @@ def test_yahoo_provider_uses_spy_symbol_and_vix_period(
     assert [bar.close for bar in bars] == [500.0, 502.0]
 
 
+def test_yahoo_provider_uses_generic_ticker_series_and_portfolio_period(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    provider = YahooSeriesProvider()
+    settings = _build_settings(portfolio_yahoo_period="2y")
+    requests = _install_yahoo_ticker_mock(
+        monkeypatch,
+        history_by_symbol={
+            "GOOG": _DummyHistory(
+                rows=[
+                    (datetime(2025, 1, 1), 190.0),
+                    (datetime(2025, 1, 2), 191.0),
+                ]
+            )
+        },
+    )
+
+    bars = provider.get_series("ticker:GOOG", settings)
+
+    assert requests == [("GOOG", "2y", "1d")]
+    assert [bar.close for bar in bars] == [190.0, 191.0]
+
+
+def test_yahoo_provider_rejects_blank_generic_ticker_symbol() -> None:
+    provider = YahooSeriesProvider()
+    settings = _build_settings()
+
+    with pytest.raises(ValueError, match="must provide a non-empty symbol"):
+        provider.get_series("ticker:   ", settings)
+
+
 def test_yahoo_provider_rejects_empty_history(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

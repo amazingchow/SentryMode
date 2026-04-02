@@ -25,6 +25,7 @@ def test_cli_output(
 def test_registered_factors_include_us10y() -> None:
     assert "us10y" in list_factor_names()
     assert "btc_realized_pl_ratio_90d" in list_factor_names()
+    assert "ai_portfolio" in list_factor_names()
 
 
 def test_default_enabled_factors_exclude_us10y() -> None:
@@ -35,6 +36,7 @@ def test_default_enabled_factors_exclude_us10y() -> None:
     )
     assert "us10y" not in settings.enabled_factors
     assert "btc_realized_pl_ratio_90d" not in settings.enabled_factors
+    assert "ai_portfolio" not in settings.enabled_factors
 
 
 def test_build_runner_wires_settings_notifier_and_factors(

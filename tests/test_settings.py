@@ -95,3 +95,26 @@ def test_settings_rejects_non_string_report_language() -> None:
             bark_device_key="device-key",
             report_language=2,
         )
+
+
+def test_settings_normalize_portfolio_positions_and_cost_basis() -> None:
+    settings = Settings(
+        _env_file=None,
+        bark_server="https://example.com",
+        bark_device_key="device-key",
+        portfolio_current_positions=[" goog ", "NVDA", "goog"],
+        portfolio_cost_basis={" goog ": 120, "nvda": 150.5},
+    )
+
+    assert settings.portfolio_current_positions == ["GOOG", "NVDA"]
+    assert settings.portfolio_cost_basis == {"GOOG": 120.0, "NVDA": 150.5}
+
+
+def test_settings_rejects_non_positive_portfolio_cost_basis() -> None:
+    with pytest.raises(ValidationError, match="must be positive"):
+        Settings(
+            _env_file=None,
+            bark_server="https://example.com",
+            bark_device_key="device-key",
+            portfolio_cost_basis={"GOOG": 0},
+        )

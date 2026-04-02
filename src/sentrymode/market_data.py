@@ -4,13 +4,15 @@ Shared daily market-data adapter seam.
 [INPUT]: Series name + `Settings` with provider symbols/periods and timeout values.
 [OUTPUT]: Normalized ascending `DailyBar` sequences for downstream factor calculations.
 [POS]: Shared adapter module in `src/sentrymode`.
-       Upstream: factor modules (currently `vix.py`, `us10y.py`, `btc_realized_pl_ratio_90d.py`).
+       Upstream: factor modules (`vix.py`, `us10y.py`, `btc_realized_pl_ratio_90d.py`,
+       `ai_portfolio.py`).
        Downstream: Yahoo Finance API and Glassnode API.
 
 [PROTOCOL]:
 1. Keep provider seam (`DailySeriesProvider`) stable so factors can swap data backends.
 2. Surface malformed payloads as explicit exceptions; do not silently coerce unknown schemas.
-3. Keep Yahoo query parameters factor-scoped (`us10y_*` vs `vix_*`) to avoid cross-factor coupling.
+3. Keep Yahoo query parameters factor-scoped (`us10y_*`, `vix_*`, `portfolio_*`) to avoid
+   cross-factor coupling while still supporting generic `ticker:<SYMBOL>` portfolio lookups.
 """
 
 from __future__ import annotations
@@ -55,7 +57,7 @@ class YahooSeriesProvider:
     ) -> list[DailyBar]:
         """Fetch and normalize the requested series from Yahoo Finance."""
         normalized_name = series_name.strip().lower()
-        symbol, period = self._resolve_query(normalized_name, settings)
+        symbol, period = self._resolve_query(series_name, settings)
         history = yfinance.Ticker(symbol).history(period=period, interval="1d")
         if history.empty:
             raise ValueError(
@@ -92,9 +94,10 @@ class YahooSeriesProvider:
 
     def _resolve_query(
         self,
-        normalized_name: str,
+        series_name: str,
         settings: Settings,
     ) -> tuple[str, str]:
+        normalized_name = series_name.strip().lower()
         if normalized_name == "us10y":
             return (
                 self._require_non_empty(settings.us10y_symbol, "us10y_symbol"),
@@ -109,6 +112,14 @@ class YahooSeriesProvider:
             return (
                 self._require_non_empty(settings.spy_yahoo_symbol, "spy_yahoo_symbol"),
                 self._require_non_empty(settings.vix_yahoo_period, "vix_yahoo_period"),
+            )
+        if normalized_name.startswith("ticker:"):
+            symbol = series_name.split(":", maxsplit=1)[1].strip().upper()
+            if not symbol:
+                raise ValueError("Ticker series requests must provide a non-empty symbol after 'ticker:'.")
+            return (
+                symbol,
+                self._require_non_empty(settings.portfolio_yahoo_period, "portfolio_yahoo_period"),
             )
         raise ValueError(f"Unsupported Yahoo series requested: {normalized_name}")
 

@@ -1,7 +1,8 @@
 A multi-factor monitoring toolkit for market signals. It is built around a small, extensible core: each factor owns its evaluation logic, a shared runner handles scheduling, and a unified notifier emits one aggregated report per execution cycle.
 
-The project currently ships with four factors:
+The project currently ships with five factors:
 
+- `ai_portfolio`: AI infrastructure portfolio monitoring with VIX/QQQ/SMH regime control
 - `ahr999`: BTC valuation and regime monitoring
 - `btc_realized_pl_ratio_90d`: BTC cycle confirmation from the realized P/L ratio 90-day SMA (Glassnode-backed, opt-in)
 - `us10y`: US10Y dual-MA trend monitoring with VIX/SPY overlay
@@ -68,6 +69,12 @@ Run only BTC realized P/L ratio SMA90 once:
 sentrymode run-once --factor btc_realized_pl_ratio_90d
 ```
 
+Run only the AI infrastructure portfolio monitor once:
+
+```bash
+sentrymode run-once --factor ai_portfolio
+```
+
 Start the shared monitor loop:
 
 ```bash
@@ -88,7 +95,7 @@ sentrymode --help
 
 ## Configuration
 
-Runtime settings use the `SENTRYMODE_` environment prefix and optional `.env` file (`pydantic-settings`). See `.env.example` for every variable, defaults, descriptions, data-source notes, and a copy-paste example block. The Glassnode-backed `btc_realized_pl_ratio_90d` factor also requires `SENTRYMODE_GLASSNODE_API_KEY` when enabled.
+Runtime settings use the `SENTRYMODE_` environment prefix and optional `.env` file (`pydantic-settings`). See `.env.example` for every variable, defaults, descriptions, data-source notes, and a copy-paste example block. The `ai_portfolio` factor adds schedule, ticker-history, and optional current-position/cost-basis settings for tranche-aware alerts. The Glassnode-backed `btc_realized_pl_ratio_90d` factor also requires `SENTRYMODE_GLASSNODE_API_KEY` when enabled.
 
 ## Project Layout
 
@@ -99,6 +106,7 @@ Runtime settings use the `SENTRYMODE_` environment prefix and optional `.env` fi
 |   |-- monitoring/
 |   |-- market_data.py
 |   `-- factors/
+|       |-- ai_portfolio.py
 |       |-- ahr999.py
 |       |-- btc_realized_pl_ratio_90d.py
 |       |-- us10y.py
@@ -138,7 +146,8 @@ make check
 - `run-monitor` is intended for long-running processes.
 - Factor failures are isolated into report entries; one factor error should not crash the whole runner.
 - In network-restricted environments, market data fetches may fail gracefully and be reported as factor execution errors.
-- The `vix`, `us10y`, and `btc_realized_pl_ratio_90d` factors are intentionally opt-in by default. Add them to `SENTRYMODE_ENABLED_FACTORS` when you want them included in shared runs.
+- The `ai_portfolio`, `vix`, `us10y`, and `btc_realized_pl_ratio_90d` factors are intentionally opt-in by default. Add them to `SENTRYMODE_ENABLED_FACTORS` when you want them included in shared runs.
+- The `ai_portfolio` factor is opinionated: it monitors a fixed AI infrastructure basket (`GOOG`, `NVDA`, `MU`, `ASML`, `ORCL`, `NLR`) and combines VIX, QQQ, SMH, moving averages, and optional earnings windows into build/add/pause/reduce alerts.
 - The `btc_realized_pl_ratio_90d` factor requires a valid Glassnode API key and computes the 90-day SMA locally from daily `Realized P/L Ratio` data.
 
 ## Roadmap

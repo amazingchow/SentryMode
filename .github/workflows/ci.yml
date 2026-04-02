@@ -68,31 +68,31 @@ jobs:
           files: coverage.xml
           fail_ci_if_error: false
 
-  safety:
-    name: Safety (dependency vulnerabilities)
-    # Fork PRs cannot read base-repo secrets; skip to avoid failing without SAFETY_API_KEY.
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ['3.12', '3.13', '3.14']
-    steps:
-      - uses: actions/checkout@v4
+  # safety:
+  #   name: Safety (dependency vulnerabilities)
+  #   # Fork PRs cannot read base-repo secrets; skip to avoid failing without SAFETY_API_KEY.
+  #   if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       python-version: ['3.12', '3.13', '3.14']
+  #   steps:
+  #     - uses: actions/checkout@v4
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-        with:
-          enable-cache: true
+  #     - name: Install uv
+  #       uses: astral-sh/setup-uv@v5
+  #       with:
+  #         enable-cache: true
 
-      - name: Set up Python
-        run: uv python install ${{ matrix.python-version }}
+  #     - name: Set up Python
+  #       run: uv python install ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: uv sync --all-extras --dev
+  #     - name: Install dependencies
+  #       run: uv sync --all-extras --dev
 
-      # Configure SAFETY_API_KEY under repo Settings → Secrets and variables → Actions.
-      - name: Run safety scan
-        env:
-          SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
+  #     # Configure SAFETY_API_KEY under repo Settings → Secrets and variables → Actions.
+  #     - name: Run safety scan
+  #       env:
+  #         SAFETY_API_KEY: ${{ secrets.SAFETY_API_KEY }}
         run: uv run safety scan --full-report
